@@ -48,7 +48,7 @@ CrestKeys is a comprehensive real estate platform that connects property buyers,
     </tr>
     <tr>
       <td width="50%">
-        <img width="2875" height="1541" alt="image" src="https://github.com/user-attachments/assets/b08c32cf-dd9c-4bea-a1a1-6563576684c6" width="100%" />
+       <img width="2867" height="1536" alt="image" src="https://github.com/user-attachments/assets/96957d13-9784-48e6-b69d-4f93a7498064" width="100%" />
       </td>
       <td width="50%">
         <img src="https://github.com/user-attachments/assets/f9b507fa-7088-465d-bc4f-e914c247c512" alt="Image 4" width="100%" />
