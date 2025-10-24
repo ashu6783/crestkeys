@@ -11,6 +11,7 @@ type Testimonial = {
   name: string;
   designation: string;
   src: string;
+  rating?:number;
 };
 export const AgentCards = ({
   testimonials,
@@ -119,6 +120,9 @@ export const AgentCards = ({
             <p className="text-sm text-gray-500 dark:text-neutral-500">
               {testimonials[active].designation}
             </p>
+            <span>
+                {testimonials[active].rating}
+            </span>
             <motion.p className="mt-8 text-lg text-gray-500 dark:text-neutral-300">
               {testimonials[active].quote.split(" ").map((word, index) => (
                 <motion.span
