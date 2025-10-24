@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useContext, useState, FormEvent } from "react";
 import { AuthContext } from "../../context/AuthContext";
 import apiRequest from "../../lib/ApiRequest";
@@ -5,6 +6,7 @@ import { useNavigate } from "react-router-dom";
 import UploadWidget from "../../components/uploadWidget/UploadWidget";
 import { AxiosError } from "axios";
 import { motion } from "framer-motion";
+import { AlertTriangle, CheckCircle, LoaderIcon } from "lucide-react";
 
 function ProfileUpdatePage() {
   const [error, setError] = useState<string>("");
@@ -14,7 +16,7 @@ function ProfileUpdatePage() {
   const [avatar, setAvatar] = useState<string[]>([]);
   const navigate = useNavigate();
 
-  console.log("ProfileUpdatePage currentUser:", currentUser); // Debug
+  console.log("ProfileUpdatePage currentUser:", currentUser);
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -38,14 +40,14 @@ function ProfileUpdatePage() {
         setLoading(false);
         return;
       }
-      console.log("Updating user with ID:", userId); // Debug
+      console.log("Updating user with ID:", userId);
       const res = await apiRequest.put(`/users/${userId}`, {
         username,
         email,
         password: password || undefined,
         avatar: avatar[0] || currentUser.avatar,
       });
-      console.log("Update response:", res.data); // Debug
+      console.log("Update response:", res.data); 
       updateUser(res.data);
       setSuccess(true);
       setTimeout(() => {
@@ -103,7 +105,7 @@ function ProfileUpdatePage() {
         initial={{ x: -50 }}
         animate={{ x: 0 }}
         transition={{ duration: 0.5 }}
-        className="w-full md:w-1/3 bg-gradient-to-br from-teal-500 to-teal-700 p-8 flex flex-col items-center justify-center text-white relative overflow-hidden"
+        className="w-full md:w-1/3 bg-gradient-to-br from-gray-700 to-gray-900 p-8 flex flex-col items-center justify-center text-white relative overflow-hidden"
       >
         {/* Decorative background elements */}
         <motion.div 
@@ -132,7 +134,7 @@ function ProfileUpdatePage() {
           className="mb-8 text-center z-10"
         >
           <h2 className="text-3xl font-bold mb-2">Profile Picture</h2>
-          <p className="text-teal-100 text-lg">Upload a new photo or keep your current one</p>
+          <p className="text-gray-100 text-lg">Upload a new photo or keep your current one</p>
         </motion.div>
         
         <motion.div 
@@ -183,8 +185,8 @@ function ProfileUpdatePage() {
           transition={{ delay: 0.7 }}
           className="text-center mt-4 z-10"
         >
-          <p className="text-sm text-teal-100">Click on the image to upload a new photo</p>
-          <p className="text-sm text-teal-100">Maximum size: 5MB</p>
+          <p className="text-sm text-gray-100">Click on the image to upload a new photo</p>
+          <p className="text-sm text-gray-100">Maximum size: 5MB</p>
         </motion.div>
       </motion.div>
       
@@ -193,7 +195,7 @@ function ProfileUpdatePage() {
         initial={{ x: 50 }}
         animate={{ x: 0 }}
         transition={{ duration: 0.5 }}
-        className="w-full md:w-2/3 p-6 flex items-center justify-center"
+        className="w-full md:w-2/3 p-6 bg-gray-900 flex items-center justify-center"
       >
         <div className="w-full max-w-md">
           <motion.form 
@@ -207,7 +209,7 @@ function ProfileUpdatePage() {
               initial={{ y: -10, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               transition={{ delay: 0.4 }}
-              className="text-3xl font-bold text-center text-teal-800 mb-8"
+              className="text-3xl font-bold text-center text-gray-800 mb-8"
             >
               Update Your Profile
             </motion.h1>
@@ -216,15 +218,9 @@ function ProfileUpdatePage() {
               <motion.div 
                 initial={{ opacity: 0, height: 0 }}
                 animate={{ opacity: 1, height: "auto" }}
-                className="mb-6 p-4 bg-green-100 border border-green-400 text-green-700 rounded-lg flex items-center"
+                className="mb-6 p-4 bg-gray-100 border border-gray-400 text-gray-700 rounded-lg flex items-center"
               >
-                <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                  <path
-                    fillRule="evenodd"
-                    d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-                    clipRule="evenodd"
-                  />
-                </svg>
+                <CheckCircle width={12} height={12} className="text-gray-600"/>
                 Profile updated successfully! Redirecting...
               </motion.div>
             )}
@@ -235,13 +231,7 @@ function ProfileUpdatePage() {
                 animate={{ opacity: 1, height: "auto" }}
                 className="mb-6 p-4 bg-red-100 border border-red-400 text-red-700 rounded-lg flex items-center"
               >
-                <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                  <path
-                    fillRule="evenodd"
-                    d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
-                    clipRule="evenodd"
-                  />
-                </svg>
+             <AlertTriangle width={12} height={12} className="text-red-700"/>
                 {error}
               </motion.div>
             )}
@@ -261,7 +251,7 @@ function ProfileUpdatePage() {
                 name="username"
                 type="text"
                 defaultValue={currentUser.username}
-                className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition"
+                className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-500 focus:border-transparent transition"
                 placeholder="Your username"
                 required
               />
@@ -282,7 +272,7 @@ function ProfileUpdatePage() {
                 name="email"
                 type="email"
                 defaultValue={currentUser.email}
-                className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition"
+                className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-500 focus:border-transparent transition"
                 placeholder="your.email@example.com"
                 required
               />
@@ -302,7 +292,7 @@ function ProfileUpdatePage() {
                 id="password"
                 name="password"
                 type="password"
-                className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition"
+                className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-500 focus:border-transparent transition"
                 placeholder="Leave blank to keep current password"
               />
               <p className="mt-1 text-xs text-gray-500">Enter a new password only if you want to change it</p>
@@ -329,31 +319,12 @@ function ProfileUpdatePage() {
                 whileTap={{ scale: 0.95 }}
                 type="submit"
                 disabled={loading}
-                className={`py-3 px-6 bg-gradient-to-r from-teal-500 to-teal-600 text-white font-medium rounded-lg shadow-md transition-all duration-300 
+                className={`py-3 px-6 bg-gradient-to-r from-gray-500 to-gray-600 text-white font-medium rounded-lg shadow-md transition-all duration-300 
                     ${loading ? "opacity-70 cursor-not-allowed" : "hover:shadow-lg"}`}
               >
                 {loading ? (
                   <span className="flex items-center">
-                    <svg
-                      className="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
-                      xmlns="http://www.w3.org/2000/svg"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                    >
-                      <circle
-                        className="opacity-25"
-                        cx="12"
-                        cy="12"
-                        r="10"
-                        stroke="currentColor"
-                        strokeWidth="4"
-                      ></circle>
-                      <path
-                        className="opacity-75"
-                        fill="currentColor"
-                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                      ></path>
-                    </svg>
+               <LoaderIcon height={12} width={12}/>
                     Updating...
                   </span>
                 ) : (
@@ -370,7 +341,7 @@ function ProfileUpdatePage() {
             className="mt-6 text-center"
           >
             <p className="text-sm text-gray-600">
-              Need help? Contact <a href="#" className="text-teal-600 hover:underline">Support</a>
+              Need help? Contact <a href="#" className="text-gray-600 hover:underline">Support</a>
             </p>
           </motion.div>
         </div>

@@ -23,8 +23,8 @@ function ProfilePage() {
   const handleLogout = useCallback(async () => {
     try {
       await apiRequest.post("/auth/logout");
-      updateUser(null);
       navigate("/");
+      updateUser(null);
     } catch (err) {
       console.error(err);
     }

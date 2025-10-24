@@ -100,7 +100,7 @@ const Auth: React.FC = () => {
     );
 
   return (
-    <div className="flex min-h-screen bg-gradient-to-br from-slate-900 to-slate-800">
+    <div className="flex min-h-screen bg-gray-900">
       <div className="flex-1 flex items-center justify-center px-6 sm:px-12">
         <div className="w-full max-w-md">
           {activeForm === "login" ? (
@@ -110,12 +110,12 @@ const Auth: React.FC = () => {
             >
               <div className="text-center">
                 <h1 className="text-3xl font-bold text-white">Welcome Back</h1>
-                <p className="text-slate-300 text-sm mt-1">Sign in to continue</p>
+                <p className="text-gray-300 text-sm mt-1">Sign in to continue</p>
               </div>
 
               <div className="space-y-4">
                 <div className="relative">
-                  <UserIcon className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 h-5 w-5" />
+                  <UserIcon className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 h-5 w-5" />
                   <input
                     type="text"
                     placeholder="Username"
