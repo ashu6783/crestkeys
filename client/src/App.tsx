@@ -20,6 +20,8 @@ import AboutPage from "./routes/about/AboutPage";
 import SplashScreen from "./components/SplashScreen";
 
 import "./index.css";
+import { Contact } from "./routes/contact/Contact";
+import { Agents } from "./routes/agents/Agents";
 
 const stripePromise = loadStripe(
   "pk_test_51RRC2QFSQWj2Vo1fPw9vNiWEcDeYh49Y6GR8SAHuO9rPt52H4fIXffNOPoKjUHLsHO0qmu4o7CSCO0rY2FpXtRds00p3XIMrbH"
@@ -35,6 +37,9 @@ const router = createBrowserRouter([
       { path: "/list", element: <ListPage /> },
       { path: "/register", element: <Register /> },
       { path: "/about", element: <AboutPage /> },
+      { path: "/contacts", element: <Contact /> },
+      { path: "/agents", element: <Agents /> },
+
     ],
   },
   {
