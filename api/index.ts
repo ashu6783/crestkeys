@@ -1,5 +1,4 @@
-import dotenv from "dotenv";
-dotenv.config();
+import "dotenv/config";
 
 import express from "express";
 import cookieParser from "cookie-parser";
@@ -14,13 +13,14 @@ import paymentroutes from "./routes/payment.route";
 
 const app = express();
 const PORT = process.env.PORT || 5000;
+const BACKEND_URL = process.env.BACKEND_URL || `http://localhost:${PORT}`;
 
 app.set("trust proxy", 1);
 
 const allowedOrigins = [
-  'https://ashureal-estate.vercel.app', 
-  'http://localhost:5173'
-];
+  process.env.FRONTEND_URL,
+  "https://ashureal-estate.vercel.app",
+].filter((origin): origin is string => Boolean(origin));
 
 app.use(
   cors({
@@ -57,7 +57,7 @@ app.get("/", (req, res) => {
 
 
 connectDB().then(() => {
-  app.listen(PORT, () => {
-    console.log(`Server running on http://localhost:${PORT}`);
+  app.listen(Number(PORT), "0.0.0.0", () => {
+    console.log(`Server running on ${BACKEND_URL}`);
   });
 });

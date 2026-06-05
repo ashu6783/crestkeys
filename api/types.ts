@@ -48,6 +48,20 @@ export interface ISavedPost {
   createdAt: Date;
 }
 
+export interface IPayment {
+  _id: Types.ObjectId;
+  userId: Types.ObjectId;
+  postId: Types.ObjectId;
+  idempotencyKey: string;
+  stripePaymentIntentId: string;
+  amount: number;
+  currency: string;
+  status: "pending" | "succeeded" | "failed";
+  clientSecret?: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
 export interface JwtPayload {
   id: string;
   isAdmin?: boolean;

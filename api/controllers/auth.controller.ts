@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
-import bcrypt from "bcrypt";
-import jwt from "jsonwebtoken";
+import bcrypt from "bcryptjs";
 import User from "../models/user";
+import { signToken } from "../utils/jwt";
 
 const logError = (label: string, req: Request, err: unknown) => {
   console.error(`\n[${new Date().toISOString()}] ${label}`);
@@ -71,11 +71,7 @@ export const login = async (req: Request, res: Response): Promise<void> => {
       return;
     }
     const maxAge = 1000 * 60 * 60 * 24 * 7;
-    const token = jwt.sign(
-      { id: user._id.toString() },
-      process.env.JWT_SECRET_KEY as string,
-      { expiresIn: '7d' } // JWT expiration time (7 days)
-    );
+    const token = await signToken({ id: user._id.toString() });
 
     const { password: _, ...userInfo } = user.toObject();
     res

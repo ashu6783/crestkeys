@@ -1,14 +1,11 @@
-import { Request, Response, NextFunction } from "express";
-import jwt from "jsonwebtoken";
-import { JwtPayload } from "../types";
+import { Request, Response } from "express";
+import { verifyTokenValue } from "../utils/jwt";
 
-// Extend Request to include user info
 interface CustomRequest extends Request {
   userId?: string;
   isAdmin?: boolean;
 }
 
-// Middleware: Require login
 export const shouldBeLoggedIn = async (req: CustomRequest, res: Response): Promise<void> => {
   const token = req.cookies?.token;
 
@@ -18,7 +15,7 @@ export const shouldBeLoggedIn = async (req: CustomRequest, res: Response): Promi
   }
 
   try {
-    const payload = jwt.verify(token, process.env.JWT_SECRET_KEY as string) as JwtPayload;
+    const payload = await verifyTokenValue(token);
     req.userId = payload.id;
     res.status(200).json({ message: "You are authenticated", userId: req.userId });
   } catch (err) {
@@ -36,8 +33,8 @@ export const shouldBeAdmin = async (req: CustomRequest, res: Response): Promise<
   }
 
   try {
-    const payload = jwt.verify(token, process.env.JWT_SECRET_KEY as string) as JwtPayload;
-    
+    const payload = await verifyTokenValue(token);
+
     if (!payload.isAdmin) {
       res.status(403).json({ message: "Not authorized!" });
       return;
