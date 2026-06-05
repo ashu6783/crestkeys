@@ -22,7 +22,13 @@ mapboxgl.accessToken = import.meta.env.VITE_MAPBOX_TOKEN;
 function PropertyMap({ items = [], onLoad }: MapProps) {
   const mapContainer = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<mapboxgl.Map | null>(null);
+  const markersRef = useRef<mapboxgl.Marker[]>([]);
+  const itemsKeyRef = useRef("");
   const [selectedItem, setSelectedItem] = useState<Item | null>(null);
+
+  const itemsKey = items
+    .map((item) => `${item.id}:${item.latitude}:${item.longitude}`)
+    .join("|");
 
   useEffect(() => {
     if (!mapContainer.current) return;
@@ -36,13 +42,16 @@ function PropertyMap({ items = [], onLoad }: MapProps) {
       });
 
       mapRef.current.on("load", () => {
-        if (onLoad) onLoad();
+        onLoad?.();
       });
     }
 
-    const map = mapRef.current;
+    if (itemsKeyRef.current === itemsKey) return;
+    itemsKeyRef.current = itemsKey;
 
-    document.querySelectorAll(".custom-marker").forEach((el) => el.remove());
+    const map = mapRef.current;
+    markersRef.current.forEach((marker) => marker.remove());
+    markersRef.current = [];
 
     items.forEach((item) => {
       const el = document.createElement("div");
@@ -50,9 +59,11 @@ function PropertyMap({ items = [], onLoad }: MapProps) {
         "custom-marker w-6 h-6 bg-[#B8860B] rounded-full border-2 border-white cursor-pointer";
       el.onclick = () => setSelectedItem(item);
 
-      new mapboxgl.Marker(el).setLngLat([item.longitude, item.latitude]).addTo(map);
+      markersRef.current.push(
+        new mapboxgl.Marker(el).setLngLat([item.longitude, item.latitude]).addTo(map)
+      );
     });
-    
+
     if (items.length > 1) {
       const bounds = new mapboxgl.LngLatBounds();
       items.forEach((item) => bounds.extend([item.longitude, item.latitude]));
@@ -61,10 +72,18 @@ function PropertyMap({ items = [], onLoad }: MapProps) {
       map.setCenter([items[0].longitude, items[0].latitude]);
       map.setZoom(13);
     }
-  }, [items, onLoad]);
+  }, [items, itemsKey, onLoad]);
+
+  useEffect(() => {
+    return () => {
+      markersRef.current.forEach((marker) => marker.remove());
+      mapRef.current?.remove();
+      mapRef.current = null;
+    };
+  }, []);
 
   return (
-    <div className="w-full h-full relative" style={{ minHeight: "500px" }}>
+    <div className="w-full h-full relative min-h-[16rem]">
       <div ref={mapContainer} style={{ width: "100%", height: "100%" }} />
 
       {selectedItem && (

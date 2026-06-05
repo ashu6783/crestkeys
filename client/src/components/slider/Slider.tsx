@@ -91,6 +91,7 @@ export default function Slider({ images }: SliderProps) {
             <img
               src={images[modalIndex!]}
               alt={`Slide ${modalIndex! + 1}`}
+              decoding="async"
               className="max-w-full max-h-[90vh] object-contain"
             />
           </div>
@@ -131,6 +132,8 @@ export default function Slider({ images }: SliderProps) {
           <img
             src={images[currentSlide]}
             alt={`Slide ${currentSlide + 1}`}
+            decoding="async"
+            fetchPriority="high"
             className="w-full h-full object-cover"
           />
           <div className="absolute bottom-4 left-4 bg-black/60 text-white px-3 py-1 rounded-full text-sm">
@@ -166,6 +169,8 @@ export default function Slider({ images }: SliderProps) {
                 <img
                   src={img}
                   alt={`Thumbnail ${idx + 1}`}
+                  loading="lazy"
+                  decoding="async"
                   className="w-20 h-20 object-cover"
                 />
               </div>
@@ -187,6 +192,8 @@ export default function Slider({ images }: SliderProps) {
                 <img
                   src={img}
                   alt={`Thumbnail ${idx + 1}`}
+                  loading="lazy"
+                  decoding="async"
                   className="w-full h-full object-cover"
                 />
               </div>

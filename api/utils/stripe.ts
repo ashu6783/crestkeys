@@ -1,9 +1,21 @@
 import Stripe from "stripe";
 
-const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
+let stripeClient: Stripe | null = null;
 
-if (!stripeSecretKey) {
-  throw new Error("STRIPE_SECRET_KEY environment variable is missing!");
+export function getStripe(): Stripe {
+  if (!stripeClient) {
+    const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
+    if (!stripeSecretKey) {
+      throw new Error("STRIPE_SECRET_KEY environment variable is missing!");
+    }
+    stripeClient = new Stripe(stripeSecretKey);
+  }
+  return stripeClient;
 }
 
-export const stripe = new Stripe(stripeSecretKey);
+/** @deprecated Use getStripe() — kept for existing imports */
+export const stripe = new Proxy({} as Stripe, {
+  get(_target, prop) {
+    return Reflect.get(getStripe(), prop, getStripe());
+  },
+});

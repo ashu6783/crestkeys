@@ -1,19 +1,15 @@
 import { Request, Response, NextFunction } from "express";
-import jwt, { JwtPayload, VerifyErrors } from "jsonwebtoken";
+import { verifyTokenValue } from "../utils/jwt";
 
-interface CustomJwtPayload extends JwtPayload {
-  id: string;
-}
-
-interface CustomRequest extends Request {
+export interface CustomRequest extends Request {
   userId?: string;
 }
 
-export const verifyToken = (
-  req: CustomRequest, 
-  res: Response, 
+export const verifyToken = async (
+  req: CustomRequest,
+  res: Response,
   next: NextFunction
-): void => {
+): Promise<void> => {
   const token = req.cookies.token;
 
   if (!token) {
@@ -21,17 +17,11 @@ export const verifyToken = (
     return;
   }
 
-  jwt.verify(
-    token, 
-    process.env.JWT_SECRET_KEY as string, 
-    (err: VerifyErrors | null, payload: string | JwtPayload | undefined) => {
-      if (err || typeof payload !== "object" || !("id" in payload)) {
-        res.status(403).json({ message: "Token is not valid" });
-        return;
-      }
-
-      req.userId = (payload as CustomJwtPayload).id;
-      next();
-    }
-  );
+  try {
+    const payload = await verifyTokenValue(token);
+    req.userId = payload.id;
+    next();
+  } catch {
+    res.status(403).json({ message: "Token is not valid" });
+  }
 };

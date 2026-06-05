@@ -94,10 +94,7 @@ export const toQueryString = (params: Record<string, string | number | undefined
 export const api = createApi({
   reducerPath: "api",
   baseQuery: fetchBaseQuery({
-    baseUrl:
-      process.env.NODE_ENV === "development"
-        ? "http://localhost:5000/api"
-        : import.meta.env.VITE_API_BASE_URL,
+    baseUrl: import.meta.env.VITE_API_BASE_URL,
     credentials: "include",
   }),
   tagTypes: ["User", "Post", "PostDetail", "SavedPost"],
