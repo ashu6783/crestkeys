@@ -9,6 +9,8 @@ import postRoutes from "./routes/post.route";
 import userRoutes from "./routes/user.route";
 import verifyRoutes from "./routes/test.route";
 import paymentroutes from "./routes/payment.route";
+import uploadRoutes from "./routes/upload.route";
+import { initRedis } from "./utils/redis";
 
 
 const app = express();
@@ -19,19 +21,21 @@ app.set("trust proxy", 1);
 
 const allowedOrigins = [
   process.env.FRONTEND_URL,
+  "https://crestkeys.web.app",
+  "https://crestkeys.firebaseapp.com",
+  "http://localhost:5173",
   "https://ashureal-estate.vercel.app",
 ].filter((origin): origin is string => Boolean(origin));
 
 app.use(
   cors({
-    origin: function(origin, callback) {
-      if (!origin) return callback(null, true);
-      
-      if (allowedOrigins.indexOf(origin) !== -1) {
+    origin(origin, callback) {
+      if (!origin || allowedOrigins.includes(origin)) {
         callback(null, true);
-      } else {
-        callback(new Error('Not allowed by CORS'));
+        return;
       }
+
+      callback(null, false);
     },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
@@ -49,6 +53,7 @@ app.use("/api/posts", postRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/verify", verifyRoutes);
 app.use("/api/payment", paymentroutes);
+app.use("/api/upload", uploadRoutes);
 
 
 app.get("/", (req, res) => {
@@ -56,7 +61,8 @@ app.get("/", (req, res) => {
 });
 
 
-connectDB().then(() => {
+connectDB().then(async () => {
+  await initRedis();
   app.listen(Number(PORT), "0.0.0.0", () => {
     console.log(`Server running on ${BACKEND_URL}`);
   });

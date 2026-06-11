@@ -163,7 +163,6 @@ function ProfileUpdatePage() {
               <UploadWidget
                 uwConfig={{
                   cloudName: "ashuudev",
-                  uploadPreset: "ashuestate",
                   multiple: false,
                   maxImageFileSize: 5000000,
                   folder: "avatars",

@@ -193,7 +193,6 @@ function NewPostPage() {
                 sources: ["local", "url", "camera"],
                 multiple: true,
                 cloudName: "ashuudev",
-                uploadPreset: "ashuestate",
                 folder: "posts",
               }}
               setState={(urls) => {

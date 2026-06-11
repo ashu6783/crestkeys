@@ -3,6 +3,15 @@ import Post from "../models/post";
 import SavedPost from "../models/savedPost";
 import PostDetail from "../models/postDetail";
 import User from "../models/user";
+import {
+  cacheGet,
+  cacheSet,
+  invalidatePostCaches,
+  postsListCacheKey,
+  postDetailCacheKey,
+  LIST_TTL_SECONDS,
+  DETAIL_TTL_SECONDS,
+} from "../utils/cache";
 
 interface AuthenticatedRequest extends Request {
   userId?: string;
@@ -32,7 +41,16 @@ export const getPosts = async (
         $lte: maxPrice ? Number(maxPrice) : 100000000,
       };
     }
-    const posts = await Post.find(filters).exec();
+
+    const cacheKey = postsListCacheKey(req.query as Record<string, unknown>);
+    const cachedPosts = await cacheGet<unknown[]>(cacheKey);
+    if (Array.isArray(cachedPosts)) {
+      res.status(200).json(cachedPosts);
+      return;
+    }
+
+    const posts = await Post.find(filters).lean().exec();
+    await cacheSet(cacheKey, posts, LIST_TTL_SECONDS);
 
     res.status(200).json(posts);
   } catch (error: any) {
@@ -56,7 +74,14 @@ export const getPost = async (
       return;
     }
 
-    const post = await Post.findById(postId).populate("userId");
+    const cacheKey = postDetailCacheKey(postId);
+    const cachedPost = await cacheGet<Record<string, unknown>>(cacheKey);
+    if (cachedPost && typeof cachedPost === "object") {
+      res.status(200).json(cachedPost);
+      return;
+    }
+
+    const post = await Post.findById(postId).populate("userId").lean();
     if (!post) {
       res.status(404).json({ message: "Post not found" });
       return;
@@ -66,9 +91,10 @@ export const getPost = async (
     const postDetail = await PostDetail.findOne({ postId: post._id });
 
     const postWithDetails = {
-      ...post.toObject(),
-      postDetail: postDetail || null, 
+      ...post,
+      postDetail: postDetail ? postDetail.toObject() : null,
     };
+    await cacheSet(cacheKey, postWithDetails, DETAIL_TTL_SECONDS);
     res.status(200).json(postWithDetails);
   } catch (error: any) {
     console.error("Error in getPost:", error.message, error.stack);
@@ -149,6 +175,7 @@ export const addPost = async (
 
     const savedPostDetail = await newPostDetail.save();
 
+    await invalidatePostCaches();
 
     res.status(201).json(savedPost);
   } catch (error: any) {
@@ -222,6 +249,7 @@ export const updatePost = async (
       postDetail: updatedPostDetail || null,
     };
 
+    await invalidatePostCaches(postId);
 
     res.status(200).json(postWithDetails);
   } catch (error: any) {
@@ -263,6 +291,7 @@ export const deletePost = async (
     await PostDetail.deleteOne({ postId: post._id });
     await SavedPost.deleteMany({ postId: post._id });
     await Post.deleteOne({ _id: postId });
+    await invalidatePostCaches(postId);
     res.status(200).json({ message: "Post and associated data deleted successfully" });
   } catch (error: any) {
     console.error("Error in deletePost:", error.message, error.stack);
