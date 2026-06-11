@@ -25,9 +25,7 @@ export const getPosts = async (
     if (type) filters.type = { $regex: String(type), $options: "i" };
     if (property) filters.property = { $regex: String(property), $options: "i" };
     if (bedroom) filters.bedroom = { $gte: Number(bedroom) };
-    if (bathroom) filters.bathroom = { $gte: Number(bathroom) }; 
-    filters.latitude = { $exists: true, $ne: null };
-    filters.longitude = { $exists: true, $ne: null };
+    if (bathroom) filters.bathroom = { $gte: Number(bathroom) };
     if (minPrice || maxPrice) {
       filters.price = {
         $gte: minPrice ? Number(minPrice) : 0,
@@ -133,8 +131,8 @@ export const addPost = async (
       return;
     }
 
-    postData.latitude = String(postData.latitude);
-    postData.longitude = String(postData.longitude);
+    postData.latitude = Number(postData.latitude);
+    postData.longitude = Number(postData.longitude);
 
     const newPost = new Post({
       ...postData,

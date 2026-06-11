@@ -100,8 +100,13 @@ export const createPaymentIntent = async (
       amount: post.price,
     });
   } catch (error) {
+    const message =
+      error instanceof Error ? error.message : "Unknown payment error";
     console.error("Stripe PaymentIntent Error:", error);
-    res.status(500).json({ error: "Failed to create payment intent" });
+    res.status(500).json({
+      error: "Failed to create payment intent",
+      ...(process.env.NODE_ENV !== "production" && { detail: message }),
+    });
   }
 };
 
