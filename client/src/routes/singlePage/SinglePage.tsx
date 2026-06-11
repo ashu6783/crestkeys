@@ -22,6 +22,7 @@ import {
 } from "lucide-react";
 import { useGetPostByIdQuery } from "../../state/api";
 import apiRequest from "../../lib/ApiRequest";
+import { parseCoordinate } from "../../lib/utils";
 
 const PaymentCheckout = lazy(() => import("../../components/payment/PaymentCheckout"));
 
@@ -101,7 +102,10 @@ const SinglePage = () => {
   );
 
   const mapItems = useMemo((): MapItem[] => {
-    if (!post?.latitude || !post?.longitude) return [];
+    const latitude = parseCoordinate(post?.latitude);
+    const longitude = parseCoordinate(post?.longitude);
+    if (!post || latitude === null || longitude === null) return [];
+
     return [
       {
         id: post._id,
@@ -109,19 +113,11 @@ const SinglePage = () => {
         img: post.images?.[0] || "/default-image.png",
         price: post.price,
         bedroom: post.bedroom,
-        latitude: Number(post.latitude),
-        longitude: Number(post.longitude),
+        latitude,
+        longitude,
       },
     ];
-  }, [
-    post?._id,
-    post?.title,
-    post?.images,
-    post?.price,
-    post?.bedroom,
-    post?.latitude,
-    post?.longitude,
-  ]);
+  }, [post]);
 
   if (isLoading) {
     return (

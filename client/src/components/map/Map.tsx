@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
+import { parseCoordinate } from "../../lib/utils";
 
 interface Item {
   id: string;
@@ -30,14 +31,22 @@ function PropertyMap({ items = [], onLoad }: MapProps) {
     .map((item) => `${item.id}:${item.latitude}:${item.longitude}`)
     .join("|");
 
+  const validItems = items.filter(
+    (item) =>
+      parseCoordinate(item.latitude) !== null && parseCoordinate(item.longitude) !== null
+  );
+
   useEffect(() => {
-    if (!mapContainer.current) return;
+    if (!mapContainer.current || validItems.length === 0) return;
 
     if (!mapRef.current) {
       mapRef.current = new mapboxgl.Map({
         container: mapContainer.current,
         style: "mapbox://styles/ashu0306/cmet0ybhx002001plh48x8fvg",
-        center: [items[0]?.longitude || -122.4194, items[0]?.latitude || 37.7749],
+        center: [
+          parseCoordinate(validItems[0]?.longitude) ?? -122.4194,
+          parseCoordinate(validItems[0]?.latitude) ?? 37.7749,
+        ],
         zoom: 10,
       });
 
@@ -54,25 +63,39 @@ function PropertyMap({ items = [], onLoad }: MapProps) {
     markersRef.current = [];
 
     items.forEach((item) => {
+      const latitude = parseCoordinate(item.latitude);
+      const longitude = parseCoordinate(item.longitude);
+      if (latitude === null || longitude === null) return;
+
       const el = document.createElement("div");
       el.className =
         "custom-marker w-6 h-6 bg-[#B8860B] rounded-full border-2 border-white cursor-pointer";
       el.onclick = () => setSelectedItem(item);
 
       markersRef.current.push(
-        new mapboxgl.Marker(el).setLngLat([item.longitude, item.latitude]).addTo(map)
+        new mapboxgl.Marker(el).setLngLat([longitude, latitude]).addTo(map)
       );
     });
 
-    if (items.length > 1) {
+    if (validItems.length > 1) {
       const bounds = new mapboxgl.LngLatBounds();
-      items.forEach((item) => bounds.extend([item.longitude, item.latitude]));
+      validItems.forEach((item) => {
+        const latitude = parseCoordinate(item.latitude);
+        const longitude = parseCoordinate(item.longitude);
+        if (latitude !== null && longitude !== null) {
+          bounds.extend([longitude, latitude]);
+        }
+      });
       map.fitBounds(bounds, { padding: 50 });
-    } else if (items.length === 1) {
-      map.setCenter([items[0].longitude, items[0].latitude]);
-      map.setZoom(13);
+    } else if (validItems.length === 1) {
+      const latitude = parseCoordinate(validItems[0].latitude);
+      const longitude = parseCoordinate(validItems[0].longitude);
+      if (latitude !== null && longitude !== null) {
+        map.setCenter([longitude, latitude]);
+        map.setZoom(13);
+      }
     }
-  }, [items, itemsKey, onLoad]);
+  }, [items, itemsKey, onLoad, validItems]);
 
   useEffect(() => {
     return () => {

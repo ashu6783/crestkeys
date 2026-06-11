@@ -5,6 +5,7 @@ import Filter from "../../components/filter/Filter";
 import Card from "../../components/card/card";
 import Map from "../../components/map/Map";
 import { useGetPostsQuery, IPost } from "../../state/api";
+import { parseCoordinate } from "../../lib/utils";
 
 interface MapItem {
   id: string;
@@ -39,16 +40,24 @@ function ListPage() {
 
   const mapItems: MapItem[] = useMemo(
     () =>
-      posts.map((post: IPost) => ({
-        id: post._id || "unknown-id",
-        title: post.title || "Untitled",
-        img: post.images?.[0] || "https://via.placeholder.com/200x120?text=No+Image",
-        price: post.price || 0,
-        bedroom: post.bedroom || 0,
-        bathroom: post.bathroom || 0,
-        latitude: Number(post.latitude) || 0,
-        longitude: Number(post.longitude) || 0,
-      })),
+      posts.flatMap((post: IPost) => {
+        const latitude = parseCoordinate(post.latitude);
+        const longitude = parseCoordinate(post.longitude);
+        if (latitude === null || longitude === null) return [];
+
+        return [
+          {
+            id: post._id || "unknown-id",
+            title: post.title || "Untitled",
+            img: post.images?.[0] || "https://via.placeholder.com/200x120?text=No+Image",
+            price: post.price || 0,
+            bedroom: post.bedroom || 0,
+            bathroom: post.bathroom || 0,
+            latitude,
+            longitude,
+          },
+        ];
+      }),
     [posts]
   );
 
