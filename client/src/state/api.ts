@@ -79,6 +79,7 @@ export interface ISavedPost {
 export interface ProfilePostsResponse {
   userPosts: IPost[];
   savedPosts: IPost[];
+  boughtPosts: IPost[];
 }
 
 // ----------------- Utils -----------------

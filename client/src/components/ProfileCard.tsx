@@ -12,6 +12,7 @@ interface ProfileCardProps {
   };
   postCount: number;
   savedCount: number;
+  boughtCount: number;
   handleLogout: () => Promise<void>;
 }
 
@@ -19,6 +20,7 @@ const ProfileCard: React.FC<ProfileCardProps> = memo(({
   currentUser,
   postCount,
   savedCount,
+  boughtCount,
   handleLogout,
 }) => {
   return (
@@ -73,7 +75,7 @@ const ProfileCard: React.FC<ProfileCardProps> = memo(({
             <User className="text-[#B8860B]" size={16} />
             <h3 className="text-white font-medium text-sm md:text-base">Account Stats</h3>
           </div>
-          <div className="grid grid-cols-2 gap-4 text-white">
+          <div className="grid grid-cols-3 gap-4 text-white">
             <div>
               <p className="text-xs md:text-sm text-gray-300">Posts</p>
               <p className="text-xl md:text-2xl font-bold">{postCount}</p>
@@ -81,6 +83,10 @@ const ProfileCard: React.FC<ProfileCardProps> = memo(({
             <div>
               <p className="text-xs md:text-sm text-gray-300">Saved</p>
               <p className="text-xl md:text-2xl font-bold">{savedCount}</p>
+            </div>
+            <div>
+              <p className="text-xs md:text-sm text-gray-300">Bought</p>
+              <p className="text-xl md:text-2xl font-bold">{boughtCount}</p>
             </div>
           </div>
         </div>
@@ -94,7 +100,8 @@ const ProfileCard: React.FC<ProfileCardProps> = memo(({
     prevProps.currentUser.email === nextProps.currentUser.email &&
     prevProps.currentUser.avatar === nextProps.currentUser.avatar &&
     prevProps.postCount === nextProps.postCount &&
-    prevProps.savedCount === nextProps.savedCount
+    prevProps.savedCount === nextProps.savedCount &&
+    prevProps.boughtCount === nextProps.boughtCount
   );
 });
 

@@ -8,8 +8,6 @@ interface CloudinaryUploadWidgetConfig {
   sources?: string[];
   multiple?: boolean;
   apiKey?: string;
-  timestamp?: number;
-  signature?: string;
   [key: string]: unknown;
 }
 
@@ -21,11 +19,9 @@ interface CloudinaryUploadResult {
   };
 }
 
-interface SignedUploadResponse {
+interface UploadConfigResponse {
   cloudName: string;
   apiKey: string;
-  timestamp: number;
-  signature: string;
   folder: string;
 }
 
@@ -74,22 +70,45 @@ const UploadWidget: React.FC<UploadWidgetProps> = ({
     }
   }, [loaded]);
 
-  const fetchSignedUploadConfig = useCallback(async () => {
-    const folder = typeof uwConfig.folder === "string" ? uwConfig.folder : "posts";
-    const { data } = await apiRequest.get<SignedUploadResponse>("/upload/sign", {
-      params: { folder },
+  const defaultFolder =
+    typeof uwConfig.folder === "string" ? uwConfig.folder : "posts";
+
+  const generateUploadSignature = useCallback(
+    (
+      callback: (signature: string) => void,
+      paramsToSign: Record<string, unknown>
+    ) => {
+      apiRequest
+        .post<{ signature: string }>("/upload/sign", {
+          params_to_sign: paramsToSign,
+        })
+        .then(({ data }) => callback(data.signature))
+        .catch((err) => {
+          console.error("Failed to sign Cloudinary upload:", err);
+          setError("Failed to sign upload");
+          callback("");
+        });
+    },
+    []
+  );
+
+  const fetchUploadWidgetConfig = useCallback(async () => {
+    const { data } = await apiRequest.get<UploadConfigResponse>("/upload/sign", {
+      params: { folder: defaultFolder },
     });
 
     return {
-      ...uwConfig,
       cloudName: data.cloudName,
       apiKey: data.apiKey,
-      timestamp: data.timestamp,
-      signature: data.signature,
+      uploadSignature: generateUploadSignature,
       folder: data.folder,
-      uploadPreset: undefined,
+      ...(uwConfig.sources ? { sources: uwConfig.sources } : {}),
+      ...(uwConfig.multiple !== undefined ? { multiple: uwConfig.multiple } : {}),
+      ...(typeof uwConfig.maxImageFileSize === "number"
+        ? { maxImageFileSize: uwConfig.maxImageFileSize }
+        : {}),
     };
-  }, [uwConfig]);
+  }, [defaultFolder, generateUploadSignature, uwConfig]);
 
   const initializeCloudinaryWidget = useCallback(async () => {
     if (!loaded || !window.cloudinary?.createUploadWidget) {
@@ -102,9 +121,9 @@ const UploadWidget: React.FC<UploadWidgetProps> = ({
     setError(null);
 
     try {
-      const signedConfig = await fetchSignedUploadConfig();
+      const widgetConfig = await fetchUploadWidgetConfig();
       const myWidget = window.cloudinary.createUploadWidget(
-        signedConfig,
+        widgetConfig,
         (uploadError: unknown, result: CloudinaryUploadResult) => {
           if (uploadError) {
             const errorMessage =
@@ -142,7 +161,7 @@ const UploadWidget: React.FC<UploadWidgetProps> = ({
     } finally {
       setIsOpening(false);
     }
-  }, [loaded, fetchSignedUploadConfig, setState, setPublicId, onUploadComplete]);
+  }, [loaded, fetchUploadWidgetConfig, setState, setPublicId, onUploadComplete]);
 
   return (
     <CloudinaryScriptContext.Provider value={{ loaded }}>

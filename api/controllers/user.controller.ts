@@ -4,6 +4,7 @@ import User from "../models/user";
 import Post from "../models/post";
 import SavedPost from "../models/savedPost";
 import PostDetail from "../models/postDetail";
+import Payment from "../models/payment";
 
 interface CustomRequest extends Request {
   userId?: string;
@@ -139,7 +140,31 @@ export const profilePosts = async (req: CustomRequest, res: Response): Promise<v
       })
     ).then(posts => posts.filter(Boolean)); // Filter out any null values
 
-    res.status(200).json({ userPosts, savedPosts });
+    const successfulPayments = await Payment.find({
+      userId: tokenUserId,
+      status: "succeeded",
+    }).populate({
+      path: "postId",
+      populate: { path: "userId" },
+    });
+
+    const boughtPosts = await Promise.all(
+      successfulPayments.map(async (payment) => {
+        if (!payment.postId || typeof payment.postId !== "object") return null;
+
+        const populatedPost = payment.postId as unknown as {
+          _id: unknown;
+          toObject: () => Record<string, unknown>;
+        };
+        const postDetail = await PostDetail.findOne({ postId: populatedPost._id });
+        return {
+          ...populatedPost.toObject(),
+          postDetail: postDetail || null,
+        };
+      })
+    ).then((posts) => posts.filter(Boolean));
+
+    res.status(200).json({ userPosts, savedPosts, boughtPosts });
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: "Failed to get profile posts!" });

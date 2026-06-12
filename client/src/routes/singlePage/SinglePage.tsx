@@ -1,5 +1,5 @@
-import { useState, useContext, useCallback, useMemo, memo, lazy, Suspense } from "react";
-import { useParams, Link, useNavigate } from "react-router-dom";
+import { useState, useContext, useCallback, useMemo, memo, lazy, Suspense, useEffect } from "react";
+import { useParams, Link, useNavigate, useLocation, useSearchParams } from "react-router-dom";
 import DOMPurify from "dompurify";
 import { AuthContext } from "../../context/AuthContext";
 import Slider from "../../components/slider/Slider";
@@ -68,16 +68,36 @@ const InfoRow = memo(function InfoRow({
 
 const SinglePage = () => {
   const { id } = useParams<{ id: string }>();
-  const { data: post, isLoading, isError } = useGetPostByIdQuery(id!);
+  const isValidPostId = Boolean(id && /^[0-9a-fA-F]{24}$/.test(id));
+  const { data: post, isLoading, isError } = useGetPostByIdQuery(id!, {
+    skip: !isValidPostId,
+  });
   const [saved, setSaved] = useState(false);
   const [paymentCompleted, setPaymentCompleted] = useState(false);
   const [showPaymentForm, setShowPaymentForm] = useState(false);
   const [paymentIdempotencyKey, setPaymentIdempotencyKey] = useState("");
-  const { currentUser } = useContext(AuthContext);
+  const { currentUser, loading: authLoading } = useContext(AuthContext);
   const navigate = useNavigate();
+  const location = useLocation();
+  const [searchParams] = useSearchParams();
+  const wantsPayment = searchParams.get("pay") === "true";
+
+  const redirectToLogin = useCallback(
+    (returnPath?: string) => {
+      const from = returnPath ?? `${location.pathname}?pay=true`;
+      navigate("/login", { state: { from } });
+    },
+    [location.pathname, navigate]
+  );
+
+  useEffect(() => {
+    if (authLoading || currentUser || !wantsPayment) return;
+    redirectToLogin(`${location.pathname}?pay=true`);
+  }, [authLoading, currentUser, wantsPayment, location.pathname, redirectToLogin]);
 
   const handleSave = async () => {
-    if (!currentUser) return navigate("/login");
+    if (authLoading) return;
+    if (!currentUser) return redirectToLogin(location.pathname);
     setSaved((prev: boolean) => !prev);
     try {
       await apiRequest.post("/users/save", { postId: post?._id });
@@ -91,10 +111,20 @@ const SinglePage = () => {
   }, []);
 
   const handlePayment = useCallback(() => {
-    if (!currentUser) return navigate("/login");
+    if (authLoading) return;
+    if (!currentUser) {
+      redirectToLogin(`${location.pathname}?pay=true`);
+      return;
+    }
     setPaymentIdempotencyKey(crypto.randomUUID());
     setShowPaymentForm(true);
-  }, [currentUser, navigate]);
+  }, [authLoading, currentUser, redirectToLogin, location.pathname]);
+
+  useEffect(() => {
+    if (authLoading || !currentUser || !post || !wantsPayment || showPaymentForm) return;
+    setPaymentIdempotencyKey(crypto.randomUUID());
+    setShowPaymentForm(true);
+  }, [authLoading, currentUser, post, wantsPayment, showPaymentForm]);
 
   const sanitizedDescription = useMemo(
     () => DOMPurify.sanitize(post?.postDetail?.desc || "<p>No description provided</p>"),
@@ -118,6 +148,17 @@ const SinglePage = () => {
       },
     ];
   }, [post]);
+
+  if (!isValidPostId) {
+    return (
+      <div className="flex flex-col items-center justify-center h-screen p-8">
+        <div className="text-red-500 text-xl mb-4">Page not found</div>
+        <Link to="/" className="bg-[#B8860B] text-white px-6 py-2 rounded-lg hover:bg-[#a17609]">
+          Return to Home
+        </Link>
+      </div>
+    );
+  }
 
   if (isLoading) {
     return (

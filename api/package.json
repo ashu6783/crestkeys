@@ -9,6 +9,10 @@
     "dev": "nodemon -e ts --exec tsx index.ts",
     "build": "tsc",
     "start": "node dist/index.js",
+    "seed:posts": "tsx scripts/seedPosts.ts",
+    "seed:posts:bulk": "tsx scripts/seedPosts.ts 100",
+    "migrate:images": "tsx scripts/migrateImagesToCloudinary.ts",
+    "upload:portraits": "tsx scripts/uploadTestimonialPortraits.ts",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
@@ -17,10 +21,12 @@
   "description": "",
   "dependencies": {
     "bcryptjs": "^3.0.2",
+    "cloudinary": "^2.10.0",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
     "dotenv": "^16.5.0",
     "express": "^5.1.0",
+    "ioredis": "^5.11.1",
     "jose": "^6.0.11",
     "mongoose": "^8.13.2",
     "socket.io": "^4.8.1",

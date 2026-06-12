@@ -2,7 +2,7 @@ import { useContext, useState, useCallback } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import apiRequest from "../../lib/ApiRequest";
 import { AuthContext } from "../../context/AuthContext";
-import { Plus, Save, FileText, LogOut, Inbox } from "lucide-react";
+import { Plus, Save, FileText, LogOut, Inbox, ShoppingBag } from "lucide-react";
 import ProfileCard from "../../components/ProfileCard";
 import PostList from "../../components/list/PostList";
 import { useGetProfilePostsQuery } from "../../state/api";
@@ -17,7 +17,7 @@ const SimpleLoader = () => (
 function ProfilePage() {
   const { updateUser, currentUser } = useContext(AuthContext);
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState<"myPosts" | "savedPosts">("myPosts");
+  const [activeTab, setActiveTab] = useState<"myPosts" | "savedPosts" | "boughtPosts">("myPosts");
   const { data: postResponse, isLoading, isError } = useGetProfilePostsQuery();
 
   const handleLogout = useCallback(async () => {
@@ -54,6 +54,7 @@ function ProfilePage() {
           currentUser={currentUser}
           postCount={postResponse.userPosts.length}
           savedCount={postResponse.savedPosts.length}
+          boughtCount={postResponse.boughtPosts.length}
           handleLogout={handleLogout}
         />
       </div>
@@ -62,22 +63,24 @@ function ProfilePage() {
       <div className="w-full backdrop-blur-lg bg-white/5 shadow-2xl rounded-2xl p-5 md:p-8 border border-white/10">
         {/* Tabs */}
         <div className="flex mb-6 border-b border-gray-700 overflow-x-auto relative">
-          {["myPosts", "savedPosts"].map((tab) => (
+          {(
+            [
+              { id: "myPosts" as const, label: "My Posts", icon: FileText },
+              { id: "savedPosts" as const, label: "Saved Posts", icon: Save },
+              { id: "boughtPosts" as const, label: "Bought Properties", icon: ShoppingBag },
+            ] as const
+          ).map(({ id, label, icon: Icon }) => (
             <button
-              key={tab}
-              onClick={() => setActiveTab(tab as "myPosts" | "savedPosts")}
-              className={`relative py-2 md:py-3 px-4 md:px-6 flex items-center gap-2 font-medium text-sm md:text-base transition-all`}
+              key={id}
+              onClick={() => setActiveTab(id)}
+              className={`relative py-2 md:py-3 px-4 md:px-6 flex items-center gap-2 font-medium text-sm md:text-base transition-all whitespace-nowrap`}
             >
-              {tab === "myPosts" ? (
-                <FileText size={18} className={activeTab === tab ? "text-[#FFD700]" : "text-gray-400"} />
-              ) : (
-                <Save size={18} className={activeTab === tab ? "text-[#FFD700]" : "text-gray-400"} />
-              )}
-              <span className={activeTab === tab ? "text-white" : "text-gray-400 hover:text-white"}>
-                {tab === "myPosts" ? "My Posts" : "Saved Posts"}
+              <Icon size={18} className={activeTab === id ? "text-[#FFD700]" : "text-gray-400"} />
+              <span className={activeTab === id ? "text-white" : "text-gray-400 hover:text-white"}>
+                {label}
               </span>
 
-              {activeTab === tab && (
+              {activeTab === id && (
                 <motion.div
                   layoutId="underline"
                   className="absolute bottom-0 left-0 right-0 h-[2px] bg-[#FFD700]"
@@ -120,6 +123,21 @@ function ProfilePage() {
                 <div className="flex flex-col items-center justify-center py-10 text-gray-400">
                   <Inbox size={40} className="mb-3" />
                   <p>You haven't saved any posts yet.</p>
+                </div>
+              }
+            />
+          </motion.div>
+        )}
+
+        {activeTab === "boughtPosts" && (
+          <motion.div key="boughtPosts" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+            <h2 className="text-xl md:text-2xl font-bold mb-4 md:mb-6">Bought Properties</h2>
+            <PostList
+              posts={postResponse.boughtPosts}
+              emptyMessage={
+                <div className="flex flex-col items-center justify-center py-10 text-gray-400">
+                  <Inbox size={40} className="mb-3" />
+                  <p>You haven't purchased any properties yet.</p>
                 </div>
               }
             />
