@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, { useState } from "react";
 import { CardElement, useStripe, useElements } from "@stripe/react-stripe-js";
 import { CreditCard, Lock, Loader2 } from "lucide-react";
 import apiRequest from "../../lib/ApiRequest";
@@ -24,66 +24,32 @@ const CARD_ELEMENT_OPTIONS = {
 interface CheckoutFormProps {
   postId: string;
   amount: number;
-  idempotencyKey: string;
+  clientSecret: string;
   onPaymentSuccess: () => void;
 }
 
 const CheckoutForm: React.FC<CheckoutFormProps> = ({
   postId,
   amount,
-  idempotencyKey,
+  clientSecret,
   onPaymentSuccess,
 }) => {
   const stripe = useStripe();
   const elements = useElements();
-
-  const [clientSecret, setClientSecret] = useState<string | null>(null);
-  const [paymentIntentId, setPaymentIntentId] = useState<string | null>(null);
-  const [initLoading, setInitLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [cardFocused, setCardFocused] = useState(false);
-  const onPaymentSuccessRef = useRef(onPaymentSuccess);
-  onPaymentSuccessRef.current = onPaymentSuccess;
 
-  const initializePayment = useCallback(async () => {
-    setInitLoading(true);
-    setError(null);
-
-    try {
-      const response = await apiRequest.post("/payment/create-payment-intent", {
-        postId,
-        idempotencyKey,
-      });
-
-      if (response.data.alreadyPaid) {
-        onPaymentSuccessRef.current();
-        return;
-      }
-
-      setClientSecret(response.data.clientSecret);
-      setPaymentIntentId(response.data.paymentIntentId);
-    } catch (err: unknown) {
-      const message =
-        (err as { response?: { data?: { error?: string } } })?.response?.data?.error ||
-        (err as Error)?.message ||
-        "Unable to start payment";
-      setError(message);
-    } finally {
-      setInitLoading(false);
-    }
-  }, [postId, idempotencyKey]);
-
-  useEffect(() => {
-    initializePayment();
-  }, [initializePayment]);
+  const displayAmount = Number.isFinite(amount)
+    ? amount
+    : Number(amount) || 0;
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
     setSubmitting(true);
     setError(null);
 
-    if (!stripe || !elements || !clientSecret || !paymentIntentId) {
+    if (!stripe || !elements) {
       setError("Payment is not ready yet. Please wait a moment.");
       setSubmitting(false);
       return;
@@ -121,62 +87,32 @@ const CheckoutForm: React.FC<CheckoutFormProps> = ({
 
       setError("Payment could not be completed. Please try again.");
     } catch (err: unknown) {
-      const message =
-        (err as { response?: { data?: { error?: string } } })?.response?.data?.error ||
-        (err as Error)?.message ||
-        "Payment error";
-      setError(message);
+      const data = (err as { response?: { data?: { error?: string; detail?: string } } })
+        ?.response?.data;
+      setError(data?.detail || data?.error || (err as Error)?.message || "Payment error");
     } finally {
       setSubmitting(false);
     }
   };
 
-  if (initLoading) {
-    return (
-      <div className="flex flex-col items-center justify-center py-10 text-gray-500">
-        <Loader2 className="h-8 w-8 animate-spin text-[#B8860B] mb-3" />
-        <p className="text-sm">Preparing secure checkout...</p>
-      </div>
-    );
-  }
-
-  if (!clientSecret) {
-    return (
-      <div className="py-6 text-center">
-        {error && (
-          <div
-            role="alert"
-            className="mb-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700"
-          >
-            {error}
-          </div>
-        )}
-        <button
-          type="button"
-          onClick={initializePayment}
-          className="text-sm font-medium text-[#B8860B] hover:text-[#a17609]"
-        >
-          Try again
-        </button>
-      </div>
-    );
-  }
-
   return (
     <form onSubmit={handleSubmit} className="w-full">
-      <div className="flex items-center gap-2 mb-4">
+      <div className="mb-4 flex items-center gap-2">
         <CreditCard className="h-5 w-5 text-[#B8860B]" />
         <h3 className="font-semibold text-gray-800">Card payment</h3>
       </div>
 
-      <p className="text-sm text-gray-500 mb-4">
+      <p className="mb-4 text-sm text-gray-500">
         Amount due:{" "}
         <span className="font-semibold text-gray-800">
-          ${amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+          ${displayAmount.toLocaleString(undefined, {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2,
+          })}
         </span>
       </p>
 
-      <label className="block text-sm font-medium text-gray-700 mb-2">
+      <label className="mb-2 block text-sm font-medium text-gray-700">
         Card details
       </label>
       <div
@@ -193,7 +129,7 @@ const CheckoutForm: React.FC<CheckoutFormProps> = ({
         />
       </div>
 
-      <div className="flex items-center gap-1.5 mt-3 text-xs text-gray-500">
+      <div className="mt-3 flex items-center gap-1.5 text-xs text-gray-500">
         <Lock className="h-3.5 w-3.5" />
         <span>Payments are processed securely by Stripe</span>
       </div>
@@ -209,8 +145,8 @@ const CheckoutForm: React.FC<CheckoutFormProps> = ({
 
       <button
         type="submit"
-        disabled={!stripe || submitting || !clientSecret}
-        className="mt-6 w-full flex items-center justify-center gap-2 rounded-lg bg-[#B8860B] py-3 font-medium text-white shadow-sm transition hover:bg-[#a17609] disabled:cursor-not-allowed disabled:opacity-60"
+        disabled={!stripe || submitting}
+        className="mt-6 flex w-full items-center justify-center gap-2 rounded-lg bg-[#B8860B] py-3 font-medium text-white shadow-sm transition hover:bg-[#a17609] disabled:cursor-not-allowed disabled:opacity-60"
       >
         {submitting ? (
           <>
@@ -218,7 +154,10 @@ const CheckoutForm: React.FC<CheckoutFormProps> = ({
             Processing...
           </>
         ) : (
-          `Pay $${amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+          `Pay $${displayAmount.toLocaleString(undefined, {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2,
+          })}`
         )}
       </button>
     </form>

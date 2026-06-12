@@ -18,6 +18,9 @@ type CardProps = {
   className?: string;
 };
 
+const PROPERTY_PLACEHOLDER =
+  "https://res.cloudinary.com/ashuudev/image/upload/v1747387453/posts/qmr4ozxybox5wwc5adg6.jpg";
+
 function Card({ item, className = "" }: CardProps) {
   const [isLiked, setIsLiked] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
@@ -30,7 +33,7 @@ function Card({ item, className = "" }: CardProps) {
   const imageSource =
     item.images && item.images.length > 0
       ? item.images[0]
-      : item.img || "/api/placeholder/400/320";
+      : item.img || PROPERTY_PLACEHOLDER;
 
   return (
     <motion.div
@@ -61,9 +64,10 @@ function Card({ item, className = "" }: CardProps) {
             transition={{ duration: 0.5 }}
             onLoad={() => setImageLoaded(true)}
             onError={(e) => {
-              e.currentTarget.src = "/api/placeholder/400/320";
+              e.currentTarget.src = PROPERTY_PLACEHOLDER;
               setImageLoaded(true);
             }}
+            loading="lazy"
           />
 
           {/* Property type badge */}

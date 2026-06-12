@@ -58,12 +58,19 @@ export const createPaymentIntent = async (
       return;
     }
 
-    if (!post.price || post.price <= 0) {
+    const price = Number(post.price);
+    if (!Number.isFinite(price) || price <= 0) {
       res.status(400).json({ error: "Invalid property price" });
       return;
     }
 
-    const amountInCents = Math.round(post.price * 100);
+    const amountInCents = Math.round(price * 100);
+    if (!Number.isInteger(amountInCents) || amountInCents < 50) {
+      res.status(400).json({
+        error: "Property price is too low for card payment (minimum $0.50)",
+      });
+      return;
+    }
 
     const paymentIntent = await stripe.paymentIntents.create(
       {
@@ -86,7 +93,7 @@ export const createPaymentIntent = async (
         postId,
         idempotencyKey,
         stripePaymentIntentId: paymentIntent.id,
-        amount: post.price,
+        amount: price,
         currency: "usd",
         status: "pending",
         clientSecret: paymentIntent.client_secret,
@@ -97,7 +104,7 @@ export const createPaymentIntent = async (
     res.status(200).json({
       clientSecret: paymentIntent.client_secret,
       paymentIntentId: paymentIntent.id,
-      amount: post.price,
+      amount: price,
     });
   } catch (error) {
     const message =
@@ -105,7 +112,7 @@ export const createPaymentIntent = async (
     console.error("Stripe PaymentIntent Error:", error);
     res.status(500).json({
       error: "Failed to create payment intent",
-      ...(process.env.NODE_ENV !== "production" && { detail: message }),
+      detail: message,
     });
   }
 };

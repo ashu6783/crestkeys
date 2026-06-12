@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import bcrypt from "bcryptjs";
 import User from "../models/user";
 import { signToken } from "../utils/jwt";
+import { getAuthCookieOptions } from "../utils/cookieOptions";
 
 const logError = (label: string, req: Request, err: unknown) => {
   console.error(`\n[${new Date().toISOString()}] ${label}`);
@@ -75,13 +76,7 @@ export const login = async (req: Request, res: Response): Promise<void> => {
 
     const { password: _, ...userInfo } = user.toObject();
     res
-      .cookie("token", token, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
-        path: "/",
-        maxAge: maxAge,
-      })
+      .cookie("token", token, getAuthCookieOptions(maxAge))
       .status(200)
       .json(userInfo);
       
@@ -95,12 +90,7 @@ export const login = async (req: Request, res: Response): Promise<void> => {
 export const logout = (req: Request, res: Response): void => {
   console.log(`[${new Date().toISOString()}] POST ${req.path} - Logout requested`);
   res
-    .clearCookie("token", {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
-      path: "/",
-    })
+    .clearCookie("token", getAuthCookieOptions(0))
     .status(200)
     .json({ message: "Logout successful" });
 };
