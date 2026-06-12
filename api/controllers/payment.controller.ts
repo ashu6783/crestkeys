@@ -1,5 +1,7 @@
-import { Response } from "express";
-import { stripe } from "../utils/stripe";
+import { Request, Response } from "express";
+import Stripe from "stripe";
+import { getStripe, stripe } from "../utils/stripe";
+import { syncPaymentFromIntent } from "../utils/paymentSync";
 import Post from "../models/post";
 import Payment from "../models/payment";
 import { CustomRequest } from "../middleware/verifyToken";
@@ -101,6 +103,10 @@ export const createPaymentIntent = async (
       { upsert: true, new: true }
     );
 
+    console.log(
+      `[payment] Created PaymentIntent ${paymentIntent.id} for post ${postId} (user ${userId})`
+    );
+
     res.status(200).json({
       clientSecret: paymentIntent.client_secret,
       paymentIntentId: paymentIntent.id,
@@ -117,7 +123,7 @@ export const createPaymentIntent = async (
   }
 };
 
-export const confirmPayment = async (
+export const syncPayment = async (
   req: CustomRequest,
   res: Response
 ): Promise<void> => {
@@ -142,11 +148,6 @@ export const confirmPayment = async (
   try {
     const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
 
-    if (paymentIntent.status !== "succeeded") {
-      res.status(400).json({ error: "Payment has not succeeded yet" });
-      return;
-    }
-
     if (paymentIntent.metadata.userId !== userId) {
       res.status(403).json({ error: "Payment does not belong to this user" });
       return;
@@ -157,15 +158,124 @@ export const confirmPayment = async (
       return;
     }
 
-    await Payment.findOneAndUpdate(
-      { stripePaymentIntentId: paymentIntentId },
-      { status: "succeeded", clientSecret: undefined },
-      { upsert: false }
-    );
+    if (paymentIntent.status === "succeeded") {
+      await syncPaymentFromIntent(paymentIntent, "succeeded");
+      console.log(`[payment] Synced ${paymentIntentId} → succeeded (via /sync)`);
+    } else if (
+      paymentIntent.status === "canceled" ||
+      paymentIntent.last_payment_error
+    ) {
+      await syncPaymentFromIntent(paymentIntent, "failed");
+    }
 
-    res.status(200).json({ success: true });
+    const payment = await Payment.findOne({ stripePaymentIntentId: paymentIntentId }).lean();
+
+    res.status(200).json({
+      status: payment?.status ?? "pending",
+      paid: payment?.status === "succeeded",
+      stripeStatus: paymentIntent.status,
+    });
   } catch (error) {
-    console.error("Payment confirmation Error:", error);
-    res.status(500).json({ error: "Failed to confirm payment" });
+    console.error("Payment sync error:", error);
+    res.status(500).json({ error: "Failed to sync payment status" });
+  }
+};
+
+export const getPaymentStatus = async (
+  req: CustomRequest,
+  res: Response
+): Promise<void> => {
+  const userId = req.userId;
+  const { postId } = req.params;
+
+  if (!userId) {
+    res.status(401).json({ error: "Not authenticated" });
+    return;
+  }
+
+  if (!postId?.match(/^[0-9a-fA-F]{24}$/)) {
+    res.status(400).json({ error: "Invalid post ID" });
+    return;
+  }
+
+  try {
+    const payment = await Payment.findOne({ userId, postId })
+      .sort({ createdAt: -1 })
+      .lean();
+
+    if (!payment) {
+      res.status(200).json({ status: "none", paid: false });
+      return;
+    }
+
+    res.status(200).json({
+      status: payment.status,
+      paid: payment.status === "succeeded",
+      paymentIntentId: payment.stripePaymentIntentId,
+    });
+  } catch (error) {
+    console.error("Payment status error:", error);
+    res.status(500).json({ error: "Failed to get payment status" });
+  }
+};
+
+export const handleStripeWebhook = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  const signature = req.headers["stripe-signature"];
+  const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET?.trim();
+
+  if (!signature || typeof signature !== "string") {
+    res.status(400).send("Missing stripe-signature header");
+    return;
+  }
+
+  if (!webhookSecret) {
+    console.error("STRIPE_WEBHOOK_SECRET is not configured");
+    res.status(500).send("Webhook secret not configured");
+    return;
+  }
+
+  let event: Stripe.Event;
+
+  try {
+    event = getStripe().webhooks.constructEvent(req.body, signature, webhookSecret);
+  } catch (error) {
+    console.error("Webhook signature verification failed:", error);
+    res.status(400).send(`Webhook Error: ${(error as Error).message}`);
+    return;
+  }
+
+  try {
+    console.log(`Stripe webhook received: ${event.type} (${event.id})`);
+
+    switch (event.type) {
+      case "payment_intent.succeeded":
+        await syncPaymentFromIntent(
+          event.data.object as Stripe.PaymentIntent,
+          "succeeded"
+        );
+        console.log(
+          `[payment] Webhook updated ${(event.data.object as Stripe.PaymentIntent).id} → succeeded`
+        );
+        break;
+      case "payment_intent.payment_failed":
+        await syncPaymentFromIntent(
+          event.data.object as Stripe.PaymentIntent,
+          "failed"
+        );
+        console.log(
+          `[payment] Webhook updated ${(event.data.object as Stripe.PaymentIntent).id} → failed`
+        );
+        break;
+      default:
+        console.log(`Unhandled Stripe event: ${event.type}`);
+    }
+
+    res.status(200).json({ received: true });
+  } catch (error) {
+    console.error("Webhook handler error:", error);
+    res.status(500).json({ error: "Webhook handler failed" });
   }
 };

@@ -10,6 +10,7 @@ import userRoutes from "./routes/user.route";
 import verifyRoutes from "./routes/test.route";
 import paymentroutes from "./routes/payment.route";
 import uploadRoutes from "./routes/upload.route";
+import { handleStripeWebhook } from "./controllers/payment.controller";
 import { initRedis } from "./utils/redis";
 
 
@@ -41,6 +42,13 @@ app.use(
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization']
   })
+);
+
+// Stripe webhooks require the raw body for signature verification.
+app.post(
+  "/api/payment/webhook",
+  express.raw({ type: "application/json" }),
+  handleStripeWebhook
 );
 
 app.use(express.json());

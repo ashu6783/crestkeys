@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { CardElement, useStripe, useElements } from "@stripe/react-stripe-js";
 import { CreditCard, Lock, Loader2 } from "lucide-react";
-import apiRequest from "../../lib/ApiRequest";
+import { waitForPaymentConfirmation } from "../../lib/waitForPaymentConfirmation";
 
 const CARD_ELEMENT_OPTIONS = {
   hidePostalCode: true,
@@ -79,9 +79,8 @@ const CheckoutForm: React.FC<CheckoutFormProps> = ({
       }
 
       if (paymentIntent?.status === "succeeded") {
-        await apiRequest.post("/payment/confirm", {
+        await waitForPaymentConfirmation(postId, {
           paymentIntentId: paymentIntent.id,
-          postId,
         });
         onPaymentSuccess();
         return;

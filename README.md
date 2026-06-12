@@ -368,7 +368,7 @@ sequenceDiagram
 
 ### Payment flow
 
-Stripe handles card data on the client via Elements. The API creates PaymentIntents and records status in MongoDB with idempotency keys to prevent duplicate charges.
+Stripe handles card data on the client via Elements. The API creates PaymentIntents and records a `pending` row in MongoDB. **Only Stripe webhooks** update payment status to `succeeded` or `failed` — the client polls for confirmation after Stripe.js succeeds.
 
 ```mermaid
 sequenceDiagram
@@ -387,10 +387,23 @@ sequenceDiagram
   API-->>Checkout: clientSecret
   Checkout->>Stripe: Confirm payment (Stripe.js)
   Stripe-->>Checkout: Payment succeeded
-  Checkout->>API: POST /payment/confirm
+  Stripe->>API: POST /payment/webhook (payment_intent.succeeded)
   API->>DB: Update Payment status → succeeded
-  API-->>Checkout: 200 OK
+  Checkout->>API: GET /payment/status/:postId (poll)
+  API-->>Checkout: { paid: true }
 ```
+
+#### Local webhook testing
+
+Install the [Stripe CLI](https://stripe.com/docs/stripe-cli), then forward events to your API:
+
+```bash
+stripe listen --forward-to localhost:5000/api/payment/webhook
+```
+
+Copy the printed `whsec_...` secret into `api/.env` as `STRIPE_WEBHOOK_SECRET`, restart the API, and pay with a [test card](https://docs.stripe.com/testing) (`4242 4242 4242 4242`).
+
+For production, register `https://your-api.run.app/api/payment/webhook` in the [Stripe Dashboard](https://dashboard.stripe.com/webhooks) and subscribe to `payment_intent.succeeded` and `payment_intent.payment_failed`.
 
 ### Deployment topology
 
@@ -500,6 +513,7 @@ Edit `api/.env`:
 | `CLOUDINARY_API_KEY` | Yes | Cloudinary API key |
 | `CLOUDINARY_API_SECRET` | Yes | Cloudinary API secret |
 | `STRIPE_SECRET_KEY` | For payments | Stripe secret key |
+| `STRIPE_WEBHOOK_SECRET` | For payments | Webhook signing secret (`stripe listen` locally, Dashboard in prod) |
 | `REDIS_URL` | No | Redis connection string; caching disabled when unset |
 
 > **Windows / Node 22:** Prefer a standard MongoDB connection string over SRV if you hit `querySrv ECONNREFUSED`. See comments in `api/.env.example`.
@@ -630,7 +644,8 @@ Base URL: `/api`
 | Method | Endpoint | Auth | Description |
 | --- | --- | --- | --- |
 | `POST` | `/payment/create-payment-intent` | Yes | Create a Stripe PaymentIntent |
-| `POST` | `/payment/confirm` | Yes | Confirm payment completion |
+| `GET` | `/payment/status/:postId` | Yes | Poll payment status for a property |
+| `POST` | `/payment/webhook` | Stripe signature | Stripe webhook handler (not called by client) |
 
 ### Uploads
 
@@ -680,7 +695,7 @@ See [README.Docker.md](./README.Docker.md) for additional Docker notes.
 - [ ] Cloudinary credentials configured
 - [ ] `FRONTEND_URL` and `BACKEND_URL` set to production HTTPS URLs
 - [ ] Mapbox token set in client env
-- [ ] Stripe keys set (if using payments)
+- [ ] Stripe keys and webhook secret set (if using payments)
 - [ ] Redis URL set (recommended for performance)
 
 ## Contributing
