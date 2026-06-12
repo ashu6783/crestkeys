@@ -2,6 +2,7 @@ import { Users, Award, Home, MessageSquare,Calendar, Shield } from 'lucide-react
 import { AgentCards } from '../../components/ui/AgentCards';
 import { LayoutTextFlip } from '../../components/ui/TextFlip';
 import { motion } from "motion/react";
+import { portraitForIndex } from '../../lib/siteImages';
 
 // Testimonial type
 type Testimonial = {
@@ -21,7 +22,7 @@ const AboutPage = () => {
       name: "Ananya Patel",
       designation: "Software Engineer, Bengaluru",
       rating: 5,
-      src: "https://images.unsplash.com/photo-1607746882042-944635dfe10e?q=80&w=3540&auto=format&fit=crop&ixlib=rb-4.0.3",
+      src: portraitForIndex(0),
     },
     {
       quote:
@@ -29,7 +30,7 @@ const AboutPage = () => {
       name: "Rohit Verma",
       designation: "Entrepreneur, Mumbai",
       rating: 4.8,
-      src: "https://images.unsplash.com/photo-1557862921-37829c790f19?q=80&w=3540&auto=format&fit=crop&ixlib=rb-4.0.3",
+      src: portraitForIndex(1),
     },
     {
       quote:
@@ -37,7 +38,7 @@ const AboutPage = () => {
       name: "Megha Sharma",
       designation: "Marketing Executive, Pune",
       rating: 4.9,
-      src: "https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e?q=80&w=3540&auto=format&fit=crop&ixlib=rb-4.0.3",
+      src: portraitForIndex(2),
     },
     {
       quote:
@@ -45,7 +46,7 @@ const AboutPage = () => {
       name: "Karan Malhotra",
       designation: "Business Owner, Delhi NCR",
       rating: 5,
-      src: "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?q=80&w=3540&auto=format&fit=crop&ixlib=rb-4.0.3",
+      src: portraitForIndex(3),
     },
     {
       quote:
@@ -53,7 +54,7 @@ const AboutPage = () => {
       name: "Nisha Rao",
       designation: "Architect, Hyderabad",
       rating: 4.7,
-      src: "https://images.unsplash.com/photo-1554151228-14d9def656e4?q=80&w=3540&auto=format&fit=crop&ixlib=rb-4.0.3",
+      src: portraitForIndex(4),
     },
   ];
 
@@ -172,7 +173,7 @@ const AboutPage = () => {
               Join thousands of satisfied clients who found their perfect home with CrestKeys
             </p>
             <div className="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4">
-              <a href='/liat' className="bg-gray-600 text-white py-3 px-6 rounded-lg hover:bg-gray-700 transition w-full sm:w-auto">
+              <a href='/list' className="bg-gray-600 text-white py-3 px-6 rounded-lg hover:bg-gray-700 transition w-full sm:w-auto">
                 Browse Properties
               </a>
               <a href='/contacts'

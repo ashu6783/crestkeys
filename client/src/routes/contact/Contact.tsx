@@ -1,5 +1,6 @@
 "use client";
 import { cn } from "../../lib/utils";
+import { SITE_IMAGES } from "../../lib/siteImages";
 
 export function Contact() {
   return (
@@ -8,8 +9,9 @@ export function Contact() {
         <div
           className={cn(
             "relative overflow-hidden cursor-pointer rounded-xl shadow-2xl backgroundImage flex flex-col justify-between p-6 sm:p-8",
-            "h-auto sm:h-[26rem] bg-[url(https://images.unsplash.com/photo-1544077960-604201fe74bc?ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&ixlib=rb-1.2.1&auto=format&fit=crop&w=1651&q=80)] bg-cover bg-center"
+            "h-auto sm:h-[26rem] bg-cover bg-center"
           )}
+          style={{ backgroundImage: `url(${SITE_IMAGES.contactHero})` }}
         >
           {/* Overlay */}
           <div className="absolute inset-0 bg-black/60 group-hover/card:bg-black/70 transition duration-300"></div>

@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { CardElement, useStripe, useElements } from "@stripe/react-stripe-js";
 import { CreditCard, Lock, Loader2 } from "lucide-react";
 import apiRequest from "../../lib/ApiRequest";
@@ -34,6 +35,7 @@ const CheckoutForm: React.FC<CheckoutFormProps> = ({
   clientSecret,
   onPaymentSuccess,
 }) => {
+  const navigate = useNavigate();
   const stripe = useStripe();
   const elements = useElements();
   const [submitting, setSubmitting] = useState(false);
@@ -87,6 +89,13 @@ const CheckoutForm: React.FC<CheckoutFormProps> = ({
 
       setError("Payment could not be completed. Please try again.");
     } catch (err: unknown) {
+      const status = (err as { response?: { status?: number } })?.response?.status;
+      if (status === 401) {
+        navigate("/login", {
+          state: { from: `${window.location.pathname}${window.location.search}` },
+        });
+        return;
+      }
       const data = (err as { response?: { data?: { error?: string; detail?: string } } })
         ?.response?.data;
       setError(data?.detail || data?.error || (err as Error)?.message || "Payment error");

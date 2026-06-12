@@ -27,13 +27,13 @@ const router = createBrowserRouter([
     element: <Layout />,
     children: [
       { path: "/", element: <HomePage /> },
-      { path: "/:id", element: <SinglePage /> },
       { path: "/list", element: <ListPage /> },
+      { path: "/login", element: <Register /> },
       { path: "/register", element: <Register /> },
       { path: "/about", element: <AboutPage /> },
       { path: "/contacts", element: <Contact /> },
       { path: "/agents", element: <Agents /> },
-
+      { path: "/:id", element: <SinglePage /> },
     ],
   },
   {

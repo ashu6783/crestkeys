@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Elements } from "@stripe/react-stripe-js";
 import { loadStripe, type Stripe } from "@stripe/stripe-js";
 import { Loader2 } from "lucide-react";
@@ -28,12 +29,17 @@ function getErrorMessage(err: unknown): string {
   return data?.detail || data?.error || (err as Error)?.message || "Unable to start payment";
 }
 
+function isUnauthorized(err: unknown): boolean {
+  return (err as { response?: { status?: number } })?.response?.status === 401;
+}
+
 export default function PaymentCheckout({
   postId,
   amount,
   idempotencyKey,
   onPaymentSuccess,
 }: PaymentCheckoutProps) {
+  const navigate = useNavigate();
   const [clientSecret, setClientSecret] = useState<string | null>(null);
   const [initLoading, setInitLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -66,11 +72,17 @@ export default function PaymentCheckout({
 
       setClientSecret(response.data.clientSecret);
     } catch (err: unknown) {
+      if (isUnauthorized(err)) {
+        navigate("/login", {
+          state: { from: `${window.location.pathname}${window.location.search}` },
+        });
+        return;
+      }
       setError(getErrorMessage(err));
     } finally {
       setInitLoading(false);
     }
-  }, [postId, idempotencyKey, onPaymentSuccess]);
+  }, [postId, idempotencyKey, onPaymentSuccess, navigate]);
 
   useEffect(() => {
     initializePayment();

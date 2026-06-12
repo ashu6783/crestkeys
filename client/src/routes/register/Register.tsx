@@ -1,5 +1,5 @@
-import { useNavigate } from "react-router-dom";
-import { useContext, useState } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
+import { useContext, useEffect, useState } from "react";
 import { AuthContext, User } from "../../context/AuthContext";
 import { LockKeyhole, User as UserIcon, Mail, Shield } from "lucide-react";
 import { useLoginMutation, useRegisterMutation } from "../../state/api";
@@ -32,10 +32,25 @@ type RegisterFormInputs = z.infer<typeof registerSchema>;
 const Auth: React.FC = () => {
   const { updateUser, currentUser, loading } = useContext(AuthContext);
   const navigate = useNavigate();
+  const location = useLocation();
   const [login, { isLoading: isLoggingIn }] = useLoginMutation();
   const [registerUser, { isLoading: isRegistering }] = useRegisterMutation();
 
-  const [activeForm, setActiveForm] = useState<"login" | "register">("login");
+  const [activeForm, setActiveForm] = useState<"login" | "register">(
+    location.pathname === "/register" ? "register" : "login"
+  );
+
+  const returnPath = (location.state as { from?: string } | null)?.from || "/";
+
+  useEffect(() => {
+    setActiveForm(location.pathname === "/register" ? "register" : "login");
+  }, [location.pathname]);
+
+  useEffect(() => {
+    if (currentUser && !loading) {
+      navigate(returnPath, { replace: true });
+    }
+  }, [currentUser, loading, navigate, returnPath]);
 
   const {
     register,
@@ -50,8 +65,6 @@ const Auth: React.FC = () => {
   } = useForm<RegisterFormInputs>({
     resolver: zodResolver(registerSchema),
   });
-
-  if (currentUser && !loading) navigate("/");
 
   const onLoginSubmit: SubmitHandler<LoginFormInputs> = async ({ username, password }) => {
     try {
@@ -69,7 +82,7 @@ const Auth: React.FC = () => {
 
       updateUser(user);
       toast.success("Login successful!");
-      navigate("/");
+      navigate(returnPath);
     } catch (err: unknown) {
       const error = err as { data?: { message?: string } };
       toast.error(error?.data?.message || "Login failed");
@@ -98,6 +111,8 @@ const Auth: React.FC = () => {
         Authenticating...
       </div>
     );
+
+  if (currentUser) return null;
 
   return (
     <div className="flex min-h-screen bg-gray-900">

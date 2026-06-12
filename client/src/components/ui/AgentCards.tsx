@@ -4,6 +4,7 @@ import { MoveLeft, MoveRight } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 
 import { useEffect, useState } from "react";
+import { SITE_IMAGES } from "../../lib/siteImages";
 
 
 type Testimonial = {
@@ -84,9 +85,15 @@ export const AgentCards = ({
                   <img
                     src={testimonial.src}
                     alt={testimonial.name}
-                    width={500}
-                    height={500}
+                    width={800}
+                    height={800}
                     draggable={false}
+                    loading="lazy"
+                    decoding="async"
+                    onError={(e) => {
+                      e.currentTarget.onerror = null;
+                      e.currentTarget.src = SITE_IMAGES.portraitFallback;
+                    }}
                     className="h-full w-full rounded-3xl object-cover object-center"
                   />
                 </motion.div>
